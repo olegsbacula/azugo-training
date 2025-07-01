@@ -29,6 +29,10 @@ func runWeb(cmd *cobra.Command, args []string) error {
   app.Get("/", func(ctx *azugo.Context) {
     ctx.Text("Hello, World!")
   })
+  
+  app.Post("/find", func(ctx *azugo.Context) {
+    routes.GetUser(ctx)
+  })
    
   app.Post("/check", func(ctx *azugo.Context) {
     routes.CheckUsersExistence(ctx)
@@ -44,6 +48,10 @@ func runWeb(cmd *cobra.Command, args []string) error {
 
   app.Put("/update", func(ctx *azugo.Context) {
     routes.PatchUser(ctx)
+  })
+
+  app.Delete("/delete", func(ctx *azugo.Context) {
+    routes.DeleteUser(ctx)
   })
 
   server.Run(app)

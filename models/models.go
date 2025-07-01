@@ -10,10 +10,20 @@ type User struct {
     Email    string `json:"Email" validate:"required,email"`
 }
 
+type UserList struct {
+    Users []User `json:"users"`
+}
+
+type PublicUser struct{
+    Username string `json:"Username" validate:"required,max=20"`
+    Email    string `json:"Email" validate:"required,email"`
+}
+
+type PublicUserS struct {
+    PublicUsers []PublicUser `json:"PublicUsers"`
+}
+
 func (u *User) Validate(validate *validation.Validate) error {
     return validate.Struct(u)
 }
 
-type UserList struct {
-    Users []User `json:"users"`
-}

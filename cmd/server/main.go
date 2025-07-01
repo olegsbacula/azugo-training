@@ -3,26 +3,25 @@ package main
 import (
   "fmt"
   "os"
-
+  "go.uber.org/zap"
   "github.com/spf13/cobra"
+  "example.com/project/routes"
 )
 
-// Version holds the current application version.
-//
-// This can be set using build tag to set real version number.
-var Version = "0.0.1-dev"
+var (
+Version = "0.0.1-dev"
+logger *zap.Logger
+RootCmd *cobra.Command
 
-// RootCmd represents the base command when called without any subcommands
-var RootCmd *cobra.Command
+)
 
-// Execute adds all child commands to the root command sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
   if err := RootCmd.Execute(); err != nil {
     fmt.Println(err)
     os.Exit(-1)
   }
 }
+
 
 func initRootCmd() {
   if RootCmd != nil {
@@ -40,5 +39,11 @@ func initRootCmd() {
 func main() {
   initRootCmd() // to run do: "go run ./cmd/server"
   RootCmd.Version = Version
+  var err error
+  logger, err = zap.NewDevelopment() // или NewProduction()
+  if err != nil {
+    panic(err)
+  }
+ routes.InitLogger(logger)
   Execute()
-}
+} 
