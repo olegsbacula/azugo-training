@@ -1,0 +1,207 @@
+basePath: /
+definitions:
+  models.PublicUser:
+    properties:
+      Email:
+        description: add a custom tag to check for a unique email
+        type: string
+      Username:
+        maxLength: 20
+        type: string
+    required:
+    - Email
+    - Username
+    type: object
+  models.PublicUserS:
+    properties:
+      PublicUsers:
+        items:
+          $ref: '#/definitions/models.PublicUser'
+        type: array
+    type: object
+  models.User:
+    properties:
+      Email:
+        description: add a custom tag to check for a unique email
+        type: string
+      Password:
+        maxLength: 16
+        minLength: 6
+        type: string
+      Username:
+        maxLength: 20
+        type: string
+    required:
+    - Email
+    - Password
+    - Username
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is a sample server.
+  title: Azugo Training API
+  version: "1.0"
+paths:
+  /add:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new user and returns the updated user list
+      parameters:
+      - description: New user data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PublicUserS'
+        "400":
+          description: Invalid JSON or validation failed
+          schema:
+            type: string
+        "409":
+          description: User with same username or email already exists
+          schema:
+            type: string
+      summary: Add a new user
+      tags:
+      - Users
+  /check:
+    post:
+      consumes:
+      - application/json
+      description: Checks whether a user exists and whether the password is correct
+      parameters:
+      - description: Username and Password
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: All good
+          schema:
+            type: string
+        "400":
+          description: Invalid JSON, wrong password or username
+          schema:
+            type: string
+      summary: Check if user exists
+      tags:
+      - Users
+  /delete:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a user by username or email
+      parameters:
+      - description: Username or Email to delete
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: User deleted
+          schema:
+            type: string
+        "400":
+          description: Validation failed or bad request
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Delete user
+      tags:
+      - Users
+  /find:
+    post:
+      consumes:
+      - application/json
+      description: Looks up a user by username and returns public user data
+      parameters:
+      - description: Username to search
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PublicUser'
+        "400":
+          description: Invalid JSON or user not found
+          schema:
+            type: string
+      summary: Get user by username
+      tags:
+      - Users
+  /list:
+    get:
+      consumes:
+      - application/json
+      description: Returns a list of all users (without passwords)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PublicUserS'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get all users
+      tags:
+      - Users
+  /update:
+    put:
+      consumes:
+      - application/json
+      description: Updates user email or password by username
+      parameters:
+      - description: User data to update
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.PublicUser'
+        "400":
+          description: Validation failed or nothing to update
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Update user
+      tags:
+      - Users
+swagger: "2.0"

@@ -2,47 +2,43 @@ package routes
 
 import (
 	"encoding/json"
-
 	"azugo.io/azugo"
-	"azugo.io/core/validation"
 	"example.com/project/models"
+	"example.com/project/repository"
+	"example.com/project/services"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
-var(
- 	logger   *zap.Logger
 
-	Users = models.UserList{
-		Users: []models.User{
-			{
-				Username: "Oleg",
-				Password: "123456",
-				Email:    "olegs@gmail.com",
-			},
-			{
-				Username: "Anna",
-				Password: "654321",
-				Email:    "anna@example.com",
-			},
-		},
-	}
-)
 
 func init() {
-	for i, user := range Users.Users {
-		hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	for i, user := range repository.Users.Users {
+		bytes, err := services.HashPassword(user.Password)
 		if err != nil {
 			panic(err)
 		}
-		Users.Users[i].Password = string(hash)
+    	repository.Users.Users[i].Password = string(bytes)
 	}
 }
 
 func InitLogger(l *zap.Logger) {
-  logger = l
+  repository.Logger = l
 }
 
+
+
+
+// GetUser godoc
+// @Summary Get user by username
+// @Description Looks up a user by username and returns public user data
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body models.User true "Username to search"
+// @Success 200 {object} models.PublicUser
+// @Failure 400 {string} string "Invalid JSON or user not found"
+// @Router /find [post]
 func GetUser (ctx *azugo.Context){
 	var request models.User
 	var response models.PublicUser
@@ -50,11 +46,11 @@ func GetUser (ctx *azugo.Context){
 
 	if err := json.Unmarshal(ctx.Body.Bytes(), &request); err != nil{
         ctx.StatusCode(fasthttp.StatusBadRequest)
-        logger.Warn("invalid json", zap.Error(err))
+        repository.Logger.Warn("invalid json", zap.Error(err))
         return		
 	}
 
-	for _, record := range Users.Users{
+	for _, record := range repository.Users.Users{
 		if record.Username == request.Username{
 			response = models.PublicUser{
 				Username: request.Username,
@@ -67,13 +63,13 @@ func GetUser (ctx *azugo.Context){
 	}
 	if !found{
 		ctx.StatusCode(fasthttp.StatusBadRequest)
-        logger.Info("No user found with provided username or bad json")
+        repository.Logger.Info("No user found with provided username or bad json")
         return	
 	}
 	jsonBytes,err := json.Marshal(response)
 	if err != nil {
 		ctx.StatusCode(fasthttp.StatusNotFound)
-		logger.Warn("invalid json", zap.Error(err))
+		repository.Logger.Warn("invalid json", zap.Error(err))
 		ctx.Context().SetBodyString("User not found")
 		return
 	}
@@ -82,29 +78,38 @@ func GetUser (ctx *azugo.Context){
 	ctx.StatusCode(fasthttp.StatusOK)
 	ctx.ContentType("application/json")
 	ctx.JSON(string(jsonBytes))
-	logger.Info("User found successfully")
+	repository.Logger.Info("User found successfully")
 
 }
 
+// CheckUsersExistence godoc
+// @Summary Check if user exists
+// @Description Checks whether a user exists and whether the password is correct
+// @Tags Users
+// @Accept json
+// @Produce plain
+// @Param user body models.User true "Username and Password"
+// @Success 200 {string} string "All good"
+// @Failure 400 {string} string "Invalid JSON, wrong password or username"
+// @Router /check [post]
 func CheckUsersExistence (ctx *azugo.Context){
 	exist := false
 	var user models.User
 	if err := json.Unmarshal(ctx.Body.Bytes(), &user); err != nil{
         ctx.StatusCode(fasthttp.StatusBadRequest)
-        logger.Warn("invalid json", zap.Error(err))
+        repository.Logger.Warn("invalid json", zap.Error(err))
         return		
 	}
 
 	
-	validate := validation.New()
-	if err := user.Validate(validate); err != nil {
-        ctx.StatusCode(fasthttp.StatusBadRequest)
-		logger.Info("validation failed")
-		return 
-    }
+	if err := services.ValidUser(user); err != nil {
+	ctx.StatusCode(fasthttp.StatusBadRequest)
+	repository.Logger.Info("Validation failed", zap.Error(err))
+	return
+	}
 	foundUsernameOrEmail := false
 
-	for _, record := range Users.Users {
+	for _, record := range repository.Users.Users {
 	if record.Username == user.Username || record.Email == user.Email {
 		foundUsernameOrEmail = true
 		err := bcrypt.CompareHashAndPassword([]byte(record.Password), []byte(user.Password))
@@ -119,23 +124,32 @@ func CheckUsersExistence (ctx *azugo.Context){
 	ctx.StatusCode(fasthttp.StatusOK)
 	ctx.ContentType("text/plain")
 	ctx.Context().SetBodyString("All good")
-	logger.Info("Validation successful")
+	repository.Logger.Info("Validation successful")
 	} else if foundUsernameOrEmail {
 	ctx.StatusCode(fasthttp.StatusBadRequest)
 	ctx.ContentType("text/plain")
 	ctx.Context().SetBodyString("Incorrect password")
-	logger.Info("Wrong password")
+	repository.Logger.Info("Wrong password")
 	} else {
 	ctx.StatusCode(fasthttp.StatusBadRequest)
 	ctx.ContentType("text/plain")
 	ctx.Context().SetBodyString("Incorrect username or password")
-	logger.Info("Validation unsuccessful")
+	repository.Logger.Info("Validation unsuccessful")
 	}
 }
 
+// GetAllUsers godoc
+// @Summary Get all users
+// @Description Returns a list of all users (without passwords)
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.PublicUserS
+// @Failure 500 {string} string "Internal server error"
+// @Router /list [get]
 func GetAllUsers (ctx *azugo.Context){
 	var publicList  models. PublicUserS
-	for _, user := range Users.Users {
+	for _, user := range repository.Users.Users {
 		publicUser := models.PublicUser{
 			Username: user.Username,
 			Email:    user.Email,
@@ -145,7 +159,7 @@ func GetAllUsers (ctx *azugo.Context){
 	jsonBytes, err := json.Marshal(publicList)
 	if err != nil {
 		ctx.StatusCode(fasthttp.StatusInternalServerError)
-		logger.Warn("invalid json", zap.Error(err))
+		repository.Logger.Warn("invalid json", zap.Error(err))
 		return
 	}
 
@@ -153,11 +167,21 @@ func GetAllUsers (ctx *azugo.Context){
 	ctx.StatusCode(fasthttp.StatusOK)
 	ctx.ContentType("application/json")
 	ctx.JSON(string(jsonBytes))
-	logger.Info("Returned all users")
+	repository.Logger.Info("Returned all users")
 
 }
 
-
+// AddUserToTheList godoc
+// @Summary Add a new user
+// @Description Adds a new user and returns the updated user list
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body models.User true "New user data"
+// @Success 200 {object} models.PublicUserS
+// @Failure 400 {string} string "Invalid JSON or validation failed"
+// @Failure 409 {string} string "User with same username or email already exists"
+// @Router /add [post]
 func AddUserToTheList (ctx *azugo.Context){
 	
 	var newUser models.User
@@ -168,39 +192,35 @@ func AddUserToTheList (ctx *azugo.Context){
 		return
 	}
 
-	validate := validation.New()
-	if err := newUser.Validate(validate); err != nil {
-        ctx.StatusCode(fasthttp.StatusBadRequest)
-		logger.Info("Validation failed")
-		return 
-    }
+	if err := services.ValidUser(newUser); err != nil {
+	ctx.StatusCode(fasthttp.StatusBadRequest)
+	repository.Logger.Info("Validation failed", zap.Error(err))
+	return
+	}
 	
-	for _, record := range Users.Users{
+	for _, record := range repository.Users.Users{
 		if record.Username == newUser.Username || record.Email == newUser.Email {
 			ctx.StatusCode(fasthttp.StatusConflict)
 			ctx.ContentType("text/plain")
 			ctx.Context().SetBodyString("User with same Username or Email already exists")
-			logger.Info("User already exists")
+			repository.Logger.Info("User already exists")
 			return
 		}
 	}
-
-
-	NewPasswordBytes := []byte(newUser.Password)
 	
-	hashNewPasswordBytes, err := bcrypt.GenerateFromPassword(NewPasswordBytes, bcrypt.MinCost)
+	hashedPassword ,err:=services.HashPassword(newUser.Password)
 	
 	if err != nil {
 		ctx.StatusCode(fasthttp.StatusInternalServerError)
-		logger.Error("Error while encrypting password", zap.Error(err))
+		repository.Logger.Error("Error while encrypting password", zap.Error(err))
 		return
 	}
 
-	newUser.Password=string(hashNewPasswordBytes)
+	newUser.Password=string(hashedPassword)
 
-	Users.Users = append(Users.Users, newUser)
+	repository.Users.Users = append(repository.Users.Users, newUser)
 
-	for _, record := range Users.Users{
+	for _, record := range repository.Users.Users{
 		publicUser := models.PublicUser{
 			Username: record.Username,
 			Email:    record.Email,
@@ -211,7 +231,7 @@ func AddUserToTheList (ctx *azugo.Context){
 	usersJson, err := json.Marshal(addedPublicList)
 	if err != nil {
     ctx.StatusCode(fasthttp.StatusInternalServerError)
-    logger.Warn("invalid json", zap.Error(err))
+    repository.Logger.Warn("invalid json", zap.Error(err))
     return
 	}
 
@@ -219,17 +239,33 @@ func AddUserToTheList (ctx *azugo.Context){
 	ctx.StatusCode(fasthttp.StatusOK)
 	ctx.ContentType("application/json")
 	ctx.JSON(string(usersJson))
-	logger.Info("User added successfully")
+	repository.Logger.Info("User added successfully")
 
 }
 
+// PatchUser godoc
+// @Summary Update user
+// @Description Updates user email or password by username
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User data to update"
+// @Success 200 {object} models.PublicUser
+// @Failure 400 {string} string "Validation failed or nothing to update"
+// @Failure 404 {string} string "User not found"
+// @Router /update [put]
 func PatchUser (ctx *azugo.Context){
 
 	var PatchUser models.User
 	var changedResponse  models. PublicUser
 	found := false
 	err := json.Unmarshal(ctx.Body.Bytes(), &PatchUser)
-
+	
+	if err := services.ValidUser(PatchUser); err != nil {
+	ctx.StatusCode(fasthttp.StatusBadRequest)
+	repository.Logger.Info("Validation failed", zap.Error(err))
+	return
+	}
 	if err != nil {
 		ctx.StatusCode(fasthttp.StatusBadRequest)
 		return
@@ -238,26 +274,26 @@ func PatchUser (ctx *azugo.Context){
 	if PatchUser.Username == "" && PatchUser.Email == "" && PatchUser.Password == "" {
     ctx.StatusCode(fasthttp.StatusBadRequest)
     ctx.Context().SetBodyString("Nothing to update")
-    logger.Info("Patch failed: no fields to update")
+    repository.Logger.Info("Patch failed: no fields to update")
     return
 	}
 	
 	var changed models.User
-	for i, record := range Users.Users {
+	for i, record := range repository.Users.Users {
     if record.Username == PatchUser.Username {
         if PatchUser.Email != "" {
             record.Email = PatchUser.Email
         }
         if PatchUser.Password != "" {
-            hash, err := bcrypt.GenerateFromPassword([]byte(PatchUser.Password), bcrypt.MinCost)
+            hash, err := services.HashPassword(PatchUser.Password)
 			if err != nil {
 				ctx.StatusCode(fasthttp.StatusInternalServerError)
-				logger.Error("Failed to hash password", zap.Error(err))
+				repository.Logger.Error("Failed to hash password", zap.Error(err))
 				return
 			}
             record.Password = string(hash)
         }
-        Users.Users[i] = record
+        repository.Users.Users[i] = record
         changed = record
         found = true
         break
@@ -267,7 +303,7 @@ func PatchUser (ctx *azugo.Context){
 		ctx.StatusCode(fasthttp.StatusNotFound)
 		ctx.ContentType("text/plain")
 		ctx.Context().SetBodyString("Nothing was found")
-		logger.Info("Didn't find any records")
+		repository.Logger.Info("Didn't find any records")
 		return
 	}
 	
@@ -279,17 +315,27 @@ func PatchUser (ctx *azugo.Context){
 	usersJson, err := json.Marshal(changedResponse)
 	if err != nil {
     ctx.StatusCode(fasthttp.StatusInternalServerError)
-    logger.Warn("invalid json", zap.Error(err))
+    repository.Logger.Warn("invalid json", zap.Error(err))
     return
 	}
 
 	ctx.StatusCode(fasthttp.StatusOK)
 	ctx.ContentType("application/json")
 	ctx.JSON(string(usersJson))
-	logger.Info("User updated successfully")
+	repository.Logger.Info("User updated successfully")
 }
 
-
+// DeleteUser godoc
+// @Summary Delete user
+// @Description Deletes a user by username or email
+// @Tags Users
+// @Accept json
+// @Produce plain
+// @Param user body models.User true "Username or Email to delete"
+// @Success 200 {string} string "User deleted"
+// @Failure 400 {string} string "Validation failed or bad request"
+// @Failure 404 {string} string "User not found"
+// @Router /delete [delete]
 func DeleteUser (ctx *azugo.Context){
 	var UserToDelete models.User
 
@@ -298,15 +344,22 @@ func DeleteUser (ctx *azugo.Context){
 		ctx.StatusCode(fasthttp.StatusBadRequest)
 		return
 	}
+
+	if err := services.ValidUser(UserToDelete); err != nil {
+	ctx.StatusCode(fasthttp.StatusBadRequest)
+	repository.Logger.Info("Validation failed", zap.Error(err))
+	return
+	}
+
 	if UserToDelete.Username == "" && UserToDelete.Email == "" {
 		ctx.StatusCode(fasthttp.StatusBadRequest)
 		ctx.Context().SetBodyString("Username or email required")
 		return
 	}
 	found := false
-	for i,record := range Users.Users{
+	for i,record := range repository.Users.Users{
 		if record.Username == UserToDelete.Username || record.Email == UserToDelete.Email{
-					Users.Users = append(Users.Users[:i],Users.Users[i+1:]...)
+					repository.Users.Users = append(repository.Users.Users[:i],repository.Users.Users[i+1:]...)
 					found = true
 					break
 		}
@@ -316,12 +369,12 @@ func DeleteUser (ctx *azugo.Context){
 		ctx.StatusCode(fasthttp.StatusOK)
 		ctx.ContentType("text/plain")
 		ctx.Context().SetBodyString("User deleted")
-		logger.Info("User deleted")
+		repository.Logger.Info("User deleted")
 	} else {
 		ctx.StatusCode(fasthttp.StatusNotFound)
 		ctx.ContentType("text/plain")
 		ctx.Context().SetBodyString("User not found")
-		logger.Info("User not found")
+		repository.Logger.Info("User not found")
 	}
 
 }

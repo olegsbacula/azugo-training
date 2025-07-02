@@ -6,8 +6,8 @@ import (
 
 type User struct {
     Username string `json:"Username" validate:"required,max=20"`
-    Password string `json:"Password" validate:"required,max=16,min=6"`
-    Email    string `json:"Email" validate:"required,email"`
+    Password string `json:"Password" validate:"required,max=16,min=6"`  
+    Email    string `json:"Email" validate:"required,email"`// add a custom tag to check for a unique email
 }
 
 type UserList struct {
@@ -16,7 +16,7 @@ type UserList struct {
 
 type PublicUser struct{
     Username string `json:"Username" validate:"required,max=20"`
-    Email    string `json:"Email" validate:"required,email"`
+    Email    string `json:"Email" validate:"required,email"`// add a custom tag to check for a unique email
 }
 
 type PublicUserS struct {
