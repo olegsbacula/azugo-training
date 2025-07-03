@@ -32,20 +32,20 @@ var (
 	)
 )
 
-func corsMiddleware(next azugo.RequestHandler) azugo.RequestHandler {
-	return func(ctx *azugo.Context) {
+// func corsMiddleware(next azugo.RequestHandler) azugo.RequestHandler {
+// 	return func(ctx *azugo.Context) {
 
-		ctx.Header.Set("Access-Control-Allow-Origin", "*")
-		ctx.Header.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-		ctx.Header.Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+// 		ctx.Header.Set("Access-Control-Allow-Origin", "*")
+// 		ctx.Header.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+// 		ctx.Header.Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
 
-		if string(ctx.Method()) == "OPTIONS" {
-			ctx.StatusCode(200)
-			return
-		}
-		next(ctx)
-	}
-}
+// 		if string(ctx.Method()) == "OPTIONS" {
+// 			ctx.StatusCode(200)
+// 			return
+// 		}
+// 		next(ctx)
+// 	}
+// }
 
 func runWeb(cmd *cobra.Command, args []string) error {
 	fsDocs := &fasthttp.FS{
@@ -61,12 +61,11 @@ func runWeb(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	app.Use(corsMiddleware)
+	//app.Use(corsMiddleware)
 
-	app.Post("/find", func(ctx *azugo.Context) {
-		routes.GetUser(ctx)
-		opsProcessed.Inc()
-	})
+	app.Post("/find/{username}", func(ctx *azugo.Context) {
+    routes.GetUser(ctx)
+})
 
 	app.Post("/check", func(ctx *azugo.Context) {
 		routes.CheckUsersExistence(ctx)

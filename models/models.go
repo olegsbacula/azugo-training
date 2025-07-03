@@ -10,6 +10,8 @@ type User struct {
     Email    string `json:"Email" validate:"required,email"`// add a custom tag to check for a unique email
 }
 
+// UserList is used to store multiple users at once
+// swagger:model UserList
 type UserList struct {
     Users []User `json:"users"`
 }

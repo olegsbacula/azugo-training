@@ -129,30 +129,28 @@ paths:
       summary: Delete user
       tags:
       - Users
-  /find:
+  /find/{username}:
     post:
-      consumes:
-      - application/json
-      description: Looks up a user by username and returns public user data
+      description: Looks up a user by the username provided in the URL path and returns
+        public user data.
       parameters:
-      - description: Username to search
-        in: body
-        name: user
+      - description: The user's unique username
+        in: path
+        name: username
         required: true
-        schema:
-          $ref: '#/definitions/models.User'
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.PublicUser'
-        "400":
-          description: Invalid JSON or user not found
+          description: Username returned in JSON
           schema:
             type: string
-      summary: Get user by username
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Find user by username
       tags:
       - Users
   /list:

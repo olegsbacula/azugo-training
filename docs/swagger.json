@@ -141,39 +141,34 @@
                 }
             }
         },
-        "/find": {
+        "/find/{username}": {
             "post": {
-                "description": "Looks up a user by username and returns public user data",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Looks up a user by the username provided in the URL path and returns public user data.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get user by username",
+                "summary": "Find user by username",
                 "parameters": [
                     {
-                        "description": "Username to search",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.User"
-                        }
+                        "type": "string",
+                        "description": "The user's unique username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Username returned in JSON",
                         "schema": {
-                            "$ref": "#/definitions/models.PublicUser"
+                            "type": "string"
                         }
                     },
-                    "400": {
-                        "description": "Invalid JSON or user not found",
+                    "404": {
+                        "description": "User not found",
                         "schema": {
                             "type": "string"
                         }

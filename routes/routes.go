@@ -9,6 +9,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"fmt"
 )
 
 
@@ -29,55 +30,38 @@ func InitLogger(l *zap.Logger) {
 
 
 
-// GetUser godoc
-// @Summary Get user by username
-// @Description Looks up a user by username and returns public user data
-// @Tags Users
-// @Accept json
-// @Produce json
-// @Param user body models.User true "Username to search"
-// @Success 200 {object} models.PublicUser
-// @Failure 400 {string} string "Invalid JSON or user not found"
-// @Router /find [post]
+// FindUser godoc
+// @Summary     Find user by username
+// @Description Looks up a user by the username provided in the URL path and returns public user data.
+// @Tags        Users
+// @Produce     json
+// @Param       username  path      string  true  "The user's unique username"
+// @Success     200       {string}  string  "Username returned in JSON"
+// @Failure     404       {string}  string  "User not found"
+// @Router /find/{username} [post]
 func GetUser (ctx *azugo.Context){
-	var request models.User
-	var response models.PublicUser
+ 	username := ctx.Params.String("username")            
 	found:=false
-
-	if err := json.Unmarshal(ctx.Body.Bytes(), &request); err != nil{
-        ctx.StatusCode(fasthttp.StatusBadRequest)
-        repository.Logger.Warn("invalid json", zap.Error(err))
-        return		
-	}
-
+	fmt.Println(username)
 	for _, record := range repository.Users.Users{
-		if record.Username == request.Username{
-			response = models.PublicUser{
-				Username: request.Username,
-				Email:record.Email,
-			}
+		if record.Username == username{
 			found = true
 			break
 		}
 
 	}
 	if !found{
-		ctx.StatusCode(fasthttp.StatusBadRequest)
-        repository.Logger.Info("No user found with provided username or bad json")
+		ctx.StatusCode(fasthttp.StatusNotFound)
+		ctx.ContentType("text/plain")
+		ctx.Context().SetBodyString("User with this username doesn't exist")
+        repository.Logger.Warn("No user found with provided username", zap.String("username", username))
+
         return	
 	}
-	jsonBytes,err := json.Marshal(response)
-	if err != nil {
-		ctx.StatusCode(fasthttp.StatusNotFound)
-		repository.Logger.Warn("invalid json", zap.Error(err))
-		ctx.Context().SetBodyString("User not found")
-		return
-	}
 
-	
 	ctx.StatusCode(fasthttp.StatusOK)
-	ctx.ContentType("application/json")
-	ctx.JSON(string(jsonBytes))
+	ctx.ContentType("text/plain")
+	 ctx.JSON(map[string]string{"username": username})
 	repository.Logger.Info("User found successfully")
 
 }
