@@ -9,7 +9,6 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"fmt"
 )
 
 
@@ -30,6 +29,62 @@ func InitLogger(l *zap.Logger) {
 
 
 
+// LoginByID godoc
+// @Summary     Login by username or email
+// @Description Authenticate user by passing either username or email and password in the URL path
+// @Tags        Users
+// @Produce     plain
+// @Param       id        path      string  true  "Username or Email"
+// @Param       password  path      string  true  "Password"
+// @Success     200       {string}  string  "Login successful"
+// @Failure     400       {string}  string  "Missing credentials or wrong password"
+// @Failure     404       {string}  string  "User not found"
+// @Router      /login/{id}/{password} [get]
+func LoginByID(ctx *azugo.Context) {
+    id := ctx.Params.String("id")
+    password := ctx.Params.String("password")
+
+    
+    if id == "" || password == "" {
+        ctx.StatusCode(fasthttp.StatusBadRequest)
+        ctx.ContentType("text/plain")
+        ctx.Context().SetBodyString("Username/email and password required")
+        repository.Logger.Info("Login failed: missing credentials")
+        return
+    }
+
+
+    var foundUser *models.User
+    for _, u := range repository.Users.Users {
+        if u.Username == id || u.Email == id {
+            foundUser = &u
+            break
+        }
+    }
+    if foundUser == nil {
+        ctx.StatusCode(fasthttp.StatusNotFound)
+        ctx.ContentType("text/plain")
+        ctx.Context().SetBodyString("User not found")
+        repository.Logger.Info("Login failed: user not found", zap.String("id", id))
+        return
+    }
+
+ 
+    if err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(password)); err != nil {
+        ctx.StatusCode(fasthttp.StatusBadRequest)
+        ctx.ContentType("text/plain")
+        ctx.Context().SetBodyString("Incorrect password")
+        repository.Logger.Info("Login failed: wrong password", zap.String("id", id))
+        return
+    }
+
+
+    ctx.StatusCode(fasthttp.StatusOK)
+    ctx.ContentType("text/plain")
+    ctx.Context().SetBodyString("Login successful")
+    repository.Logger.Info("Login successful", zap.String("id", id))
+}
+
 // FindUser godoc
 // @Summary     Find user by username
 // @Description Looks up a user by the username provided in the URL path and returns public user data.
@@ -42,7 +97,6 @@ func InitLogger(l *zap.Logger) {
 func GetUser (ctx *azugo.Context){
  	username := ctx.Params.String("username")            
 	found:=false
-	fmt.Println(username)
 	for _, record := range repository.Users.Users{
 		if record.Username == username{
 			found = true

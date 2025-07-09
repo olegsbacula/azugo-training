@@ -6,10 +6,10 @@ import (
 	"example.com/project/routes"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"
+
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 )
 
 // webCmd represents the web command
@@ -96,6 +96,12 @@ func runWeb(cmd *cobra.Command, args []string) error {
 		ctx.Context().URI().SetPath("swagger.json")
 		docsHandler(ctx.Context())
 	})
+	  
+	app.Get("/health", func(ctx *azugo.Context) {
+        ctx.StatusCode(fasthttp.StatusOK)
+        ctx.ContentType("application/json")
+        ctx.JSON(map[string]string{"status": "ok"})
+    })
 
 	app.Get("/readyz", func(ctx *azugo.Context) {
 		opsProcessed.Inc()
@@ -103,6 +109,11 @@ func runWeb(cmd *cobra.Command, args []string) error {
 		ctx.ContentType("text/plain")
 		ctx.Text("All is working")
 	})
+
+	  app.Get("/login/{id}/{password}", func(ctx *azugo.Context) {
+       routes.LoginByID(ctx)
+       opsProcessed.Inc()
+    })
 
 	fsUI := &fasthttp.FS{
 		Root:               "./swagger",
@@ -120,11 +131,6 @@ func runWeb(cmd *cobra.Command, args []string) error {
 		uiHandler(ctx.Context())
 	})
 
-	metricsHandler := fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
-
-	app.Handle("GET", "/metrics", func(ctx *azugo.Context) {
-		metricsHandler(ctx.Context())
-	})
 	server.Run(app)
 	return nil
 }
