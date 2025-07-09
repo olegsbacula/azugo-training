@@ -211,6 +211,54 @@ const docTemplate = `{
                 }
             }
         },
+        "/login/{id}/{password}": {
+            "get": {
+                "description": "Authenticate user by passing either username or email and password in the URL path",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Login by username or email",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Username or Email",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Missing credentials or wrong password",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/update": {
             "put": {
                 "description": "Updates user email or password by username",

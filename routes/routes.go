@@ -9,6 +9,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
+	"net/url"
 )
 
 
@@ -41,9 +42,16 @@ func InitLogger(l *zap.Logger) {
 // @Failure     404       {string}  string  "User not found"
 // @Router      /login/{id}/{password} [get]
 func LoginByID(ctx *azugo.Context) {
-    id := ctx.Params.String("id")
+    RawId := ctx.Params.String("id")
     password := ctx.Params.String("password")
-
+	id,err := url.QueryUnescape(RawId)
+	if err!=nil{
+		ctx.StatusCode(fasthttp.StatusInternalServerError)
+		ctx.ContentType("text/plain")
+		ctx.Context().SetBodyString("Cannot decode your email")
+		repository.Logger.Info("Login failed: undecodable email")
+        return
+	}
     
     if id == "" || password == "" {
         ctx.StatusCode(fasthttp.StatusBadRequest)

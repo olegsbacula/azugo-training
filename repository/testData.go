@@ -20,6 +20,6 @@ var(
 		},
 	}
 
-		Logger   *zap.Logger
-
+	Logger   *zap.Logger
+	
 )

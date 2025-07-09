@@ -172,6 +172,39 @@ paths:
       summary: Get all users
       tags:
       - Users
+  /login/{id}/{password}:
+    get:
+      description: Authenticate user by passing either username or email and password
+        in the URL path
+      parameters:
+      - description: Username or Email
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Password
+        in: path
+        name: password
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            type: string
+        "400":
+          description: Missing credentials or wrong password
+          schema:
+            type: string
+        "404":
+          description: User not found
+          schema:
+            type: string
+      summary: Login by username or email
+      tags:
+      - Users
   /update:
     put:
       consumes:
