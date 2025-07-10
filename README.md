@@ -14,6 +14,10 @@ go run ./cmd/server
 docker compose up -d
 ```
 
+3. If any swagger changes are made:
+``` bash
+ swag init --generalInfo /cmd/server/main.go
+```
 
 ## General info 
 
