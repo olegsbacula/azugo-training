@@ -1,4 +1,3 @@
-basePath: /
 definitions:
   models.PublicUser:
     properties:
@@ -36,11 +35,14 @@ definitions:
     - Password
     - Username
     type: object
-host: localhost:8080
 info:
-  contact: {}
-  description: This is a sample server.
-  title: Azugo Training API
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is a simple GO API.
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
   version: "1.0"
 paths:
   /add:
@@ -70,6 +72,8 @@ paths:
           description: User with same username or email already exists
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Add a new user
       tags:
       - Users
@@ -96,6 +100,8 @@ paths:
           description: Invalid JSON, wrong password or username
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Check if user exists
       tags:
       - Users
@@ -126,6 +132,8 @@ paths:
           description: User not found
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Delete user
       tags:
       - Users
@@ -150,6 +158,8 @@ paths:
           description: User not found
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Find user by username
       tags:
       - Users
@@ -169,6 +179,8 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Get all users
       tags:
       - Users
@@ -202,6 +214,8 @@ paths:
           description: User not found
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Login by username or email
       tags:
       - Users
@@ -232,7 +246,14 @@ paths:
           description: User not found
           schema:
             type: string
+      security:
+      - BearerAuth: []
       summary: Update user
       tags:
       - Users
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

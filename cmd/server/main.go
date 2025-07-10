@@ -1,21 +1,25 @@
-// @title Azugo Training API
+// @title Swagger Example API
 // @version 1.0
-// @description This is a sample server.
-// @host localhost:8080
+// @description This is a simple GO API.
+// @termsOfService http://swagger.io/terms/
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 // @BasePath /
 package main
 
 import (
   "fmt"
   "os"
-  "go.uber.org/zap"
   "github.com/spf13/cobra"
   _ "example.com/project/docs"
 )
 
 var (
 Version = "0.0.1-dev"
-logger *zap.Logger
 RootCmd *cobra.Command
 )
 func Execute() {
@@ -43,7 +47,6 @@ func main() {
   initRootCmd() // to run do: "go run ./cmd/server"
   RootCmd.Version = Version
   var err error
-  logger, err = zap.NewDevelopment()
   if err != nil {
     panic(err)
   }

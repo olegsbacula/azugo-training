@@ -9,7 +9,12 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -17,6 +22,11 @@ const docTemplate = `{
     "paths": {
         "/add": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Adds a new user and returns the updated user list",
                 "consumes": [
                     "application/json"
@@ -63,6 +73,11 @@ const docTemplate = `{
         },
         "/check": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Checks whether a user exists and whether the password is correct",
                 "consumes": [
                     "application/json"
@@ -103,6 +118,11 @@ const docTemplate = `{
         },
         "/delete": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Deletes a user by username or email",
                 "consumes": [
                     "application/json"
@@ -149,6 +169,11 @@ const docTemplate = `{
         },
         "/find/{username}": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Looks up a user by the username provided in the URL path and returns public user data.",
                 "produces": [
                     "application/json"
@@ -184,6 +209,11 @@ const docTemplate = `{
         },
         "/list": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns a list of all users (without passwords)",
                 "consumes": [
                     "application/json"
@@ -213,6 +243,11 @@ const docTemplate = `{
         },
         "/login/{id}/{password}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Authenticate user by passing either username or email and password in the URL path",
                 "produces": [
                     "text/plain"
@@ -261,6 +296,11 @@ const docTemplate = `{
         },
         "/update": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Updates user email or password by username",
                 "consumes": [
                     "application/json"
@@ -358,17 +398,24 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "Azugo Training API",
-	Description:      "This is a sample server.",
+	Title:            "Swagger Example API",
+	Description:      "This is a simple GO API.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
