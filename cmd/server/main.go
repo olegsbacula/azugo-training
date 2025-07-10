@@ -10,7 +10,6 @@ import (
   "os"
   "go.uber.org/zap"
   "github.com/spf13/cobra"
-  "example.com/project/routes"
   _ "example.com/project/docs"
 )
 
@@ -48,6 +47,5 @@ func main() {
   if err != nil {
     panic(err)
   }
-  routes.InitLogger(logger)
   Execute()
 } 

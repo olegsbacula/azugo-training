@@ -2,33 +2,134 @@ package routes
 
 import (
 	"encoding/json"
+	"context"
+	"crypto/rand"
+    "encoding/base64"
 	"azugo.io/azugo"
 	"example.com/project/models"
 	"example.com/project/repository"
 	"example.com/project/services"
+	"github.com/coreos/go-oidc"
+	"golang.org/x/oauth2"
+	"time"
+	"net/url"
+	"os"
+	"fmt"
 	"github.com/valyala/fasthttp"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
-	"net/url"
 )
 
 
-func init() {
-	for i, user := range repository.Users.Users {
-		bytes, err := services.HashPassword(user.Password)
-		if err != nil {
-			panic(err)
-		}
-    	repository.Users.Users[i].Password = string(bytes)
+var (
+	
+	oauth2Config *oauth2.Config
+	verifier     *oidc.IDTokenVerifier
+)
+
+func InitOAuth(ctx context.Context, cfg *oauth2.Config, prov *oidc.Provider) {
+    oauth2Config = cfg
+    verifier = prov.Verifier(&oidc.Config{ClientID: cfg.ClientID})
+}
+
+func Sayhello (ctx *azugo.Context){
+	data,err := os.ReadFile("./public/index.html")
+	if err != nil {
+		ctx.StatusCode(fasthttp.StatusBadRequest)
+		ctx.Text("Internal server error")
 	}
+	ctx.ContentType("text/html;charset=utf-8")
+	ctx.Context().Write(data)
 }
 
-func InitLogger(l *zap.Logger) {
-  repository.Logger = l
+func randToken() string {
+	b := make([]byte,16)
+	rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
 }
 
+func HandleLogin(ctx *azugo.Context){
+	state := randToken()
+	nonce := randToken()
 
+	repository.NonceStore[state] = true 
+	repository.NonceStore[nonce] = true 
 
+	setCookie(ctx,"oauth_state",state,300)
+	setCookie(ctx,"nonce_state",nonce,300)
+
+	url := oauth2Config.AuthCodeURL(
+		state,
+		oauth2.SetAuthURLParam("nonce", nonce),
+	)
+	ctx.Context().Redirect(url,fasthttp.StatusFound)
+}
+
+func HandleCallback(ctx *azugo.Context){
+	rctx := ctx.Context()
+
+	val := rctx.Request.Header.Cookie("oauth_state")
+    if string(val) == ""  {
+        ctx.StatusCode(fasthttp.StatusBadRequest)
+        ctx.Text("Missing state cookie")
+        return
+    }
+	state := string(val)
+	qstate := string(rctx.QueryArgs().Peek("state"))
+    if qstate == "" || qstate != state || !repository.NonceStore[state] {
+        ctx.StatusCode(fasthttp.StatusBadRequest)
+        ctx.Text("Invalid state")
+        return
+    }
+	delete(repository.NonceStore,state)
+
+	code:=string(rctx.QueryArgs().Peek("code"))
+	token,err := oauth2Config.Exchange(ctx.Context(),code)
+	if err != nil {
+		ctx.StatusCode(fasthttp.StatusInternalServerError)
+        ctx.Text("Token exchange failed")
+        return
+	}
+
+	rawID, ok := token.Extra("id_token").(string)
+    if !ok {
+        ctx.StatusCode(fasthttp.StatusInternalServerError)
+        ctx.Text("No id_token")
+        return
+    }
+	idToken, err := verifier.Verify(ctx.Context(), rawID)
+    if err != nil {
+        ctx.StatusCode(fasthttp.StatusUnauthorized)
+        ctx.Text("Invalid ID token")
+        return
+    }
+
+	val2 := rctx.Request.Header.Cookie("nonce_state")
+    if string(val2) == "" || idToken.Nonce != string(val2) || !repository.NonceStore[idToken.Nonce] {
+        ctx.StatusCode(fasthttp.StatusBadRequest)
+        ctx.Text("Invalid nonce")
+        return
+    }
+    delete(repository.NonceStore, idToken.Nonce)
+	expiry := time.Until(token.Expiry)
+    setCookie(ctx, "access_token", token.AccessToken, int(expiry.Seconds()))
+
+    
+    var claims struct{ Email string `json:"email"` }
+    idToken.Claims(&claims)
+    ctx.Text(fmt.Sprintf("Hey, %s! Your token is delivered to you: %s", claims.Email, token))
+
+}
+
+func setCookie (ctx *azugo.Context, name, val string, maxAge int){
+	c :=fasthttp.AcquireCookie()
+	c.SetKey(name)
+	c.SetValue(val)
+	c.SetPath("/")
+	c.SetMaxAge(maxAge)
+	ctx.Context().Response.Header.SetCookie(c)
+	fasthttp.ReleaseCookie(c)
+}
 
 // LoginByID godoc
 // @Summary     Login by username or email

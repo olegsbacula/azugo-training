@@ -4,12 +4,13 @@ import (
 	"azugo.io/azugo"
 	"azugo.io/azugo/server"
 	"example.com/project/routes"
+	"context"
+	"log"
+	"github.com/coreos/go-oidc"
+	"golang.org/x/oauth2"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
-
-
 	"github.com/prometheus/client_golang/prometheus"
-
 )
 
 // webCmd represents the web command
@@ -32,21 +33,6 @@ var (
 	)
 )
 
-// func corsMiddleware(next azugo.RequestHandler) azugo.RequestHandler {
-// 	return func(ctx *azugo.Context) {
-
-// 		ctx.Header.Set("Access-Control-Allow-Origin", "*")
-// 		ctx.Header.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-// 		ctx.Header.Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
-
-// 		if string(ctx.Method()) == "OPTIONS" {
-// 			ctx.StatusCode(200)
-// 			return
-// 		}
-// 		next(ctx)
-// 	}
-// }
-
 func runWeb(cmd *cobra.Command, args []string) error {
 	fsDocs := &fasthttp.FS{
 		Root:               "./docs",
@@ -61,7 +47,48 @@ func runWeb(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	//app.Use(corsMiddleware)
+	indexUI := &fasthttp.FS{
+		Root:               "./public",
+		IndexNames:         []string{"index.html"},
+		GenerateIndexPages: false,
+	}
+
+	ctx := context.Background()
+	provider, err := oidc.NewProvider(ctx,
+		"http://localhost:8081/realms/demo-realm",
+	)
+	if err != nil {
+		log.Fatalf("can't connect to Keycloak: %v", err)
+	}
+
+	oauth2Config := &oauth2.Config{
+		ClientID:     "demo-client",
+		ClientSecret: "BdvCywn9JDeFmeALPo3gbK6Vda82q9jc",
+		Endpoint:     provider.Endpoint(),
+		RedirectURL:  "http://localhost:8080/callback",
+		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+	}
+
+	routes.InitOAuth(ctx, oauth2Config, provider)
+
+	staticHandler := indexUI.NewRequestHandler()
+
+	app.Get("/", func(ctx *azugo.Context) {
+    routes.Sayhello(ctx)
+	})
+
+	app.Get("/login", func(ctx *azugo.Context) {
+    routes.HandleLogin(ctx)
+	})
+
+	app.Get("/callback", func(ctx *azugo.Context) {
+    routes.HandleCallback(ctx)
+	})
+
+	app.Get("/login/{filepath:*}", func(ctx *azugo.Context) {
+		ctx.Context().URI().SetPath(ctx.UserValue("filepath").(string))
+		staticHandler(ctx.Context())
+	})
 
 	app.Post("/find/{username}", func(ctx *azugo.Context) {
     routes.GetUser(ctx)
@@ -110,10 +137,10 @@ func runWeb(cmd *cobra.Command, args []string) error {
 		ctx.Text("All is working")
 	})
 
-	  app.Get("/login/{id}/{password}", func(ctx *azugo.Context) {
-       routes.LoginByID(ctx)
-       opsProcessed.Inc()
-    })
+	//   app.Get("/login/{id}/{password}", func(ctx *azugo.Context) {
+    //    routes.LoginByID(ctx)
+    //    opsProcessed.Inc()
+    // })
 
 	fsUI := &fasthttp.FS{
 		Root:               "./swagger",

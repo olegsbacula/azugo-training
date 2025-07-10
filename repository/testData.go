@@ -2,9 +2,11 @@ package repository
 import(
 	"example.com/project/models"
 	"go.uber.org/zap"
+	"github.com/coreos/go-oidc"
+	"golang.org/x/oauth2"
 )
 
-var(
+var(	
 	 Users = models.UserList{
 		Users: []models.User{
 			{
@@ -21,5 +23,10 @@ var(
 	}
 
 	Logger   *zap.Logger
-	
+
+	oauth2Config *oauth2.Config
+
+    Verifier *oidc.IDTokenVerifier
+
+    NonceStore = map[string]bool{}
 )
