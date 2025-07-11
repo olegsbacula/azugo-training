@@ -4,11 +4,7 @@
 // @termsOfService http://swagger.io/terms/
 // @contact.name API Support
 // @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @BasePath /
+
 package main
 
 import (
@@ -46,9 +42,5 @@ func initRootCmd() {
 func main() {
   initRootCmd() // to run do: "go run ./cmd/server"
   RootCmd.Version = Version
-  var err error
-  if err != nil {
-    panic(err)
-  }
   Execute()
 } 

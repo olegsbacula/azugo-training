@@ -12,8 +12,7 @@ const docTemplate = `{
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
+            "url": "http://www.swagger.io/support"
         },
         "version": "{{.Version}}"
     },
@@ -22,11 +21,6 @@ const docTemplate = `{
     "paths": {
         "/add": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Adds a new user and returns the updated user list",
                 "consumes": [
                     "application/json"
@@ -73,11 +67,6 @@ const docTemplate = `{
         },
         "/check": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Checks whether a user exists and whether the password is correct",
                 "consumes": [
                     "application/json"
@@ -118,11 +107,6 @@ const docTemplate = `{
         },
         "/delete": {
             "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Deletes a user by username or email",
                 "consumes": [
                     "application/json"
@@ -169,11 +153,6 @@ const docTemplate = `{
         },
         "/find/{username}": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Looks up a user by the username provided in the URL path and returns public user data.",
                 "produces": [
                     "application/json"
@@ -209,11 +188,6 @@ const docTemplate = `{
         },
         "/list": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Returns a list of all users (without passwords)",
                 "consumes": [
                     "application/json"
@@ -243,11 +217,6 @@ const docTemplate = `{
         },
         "/login/{id}/{password}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Authenticate user by passing either username or email and password in the URL path",
                 "produces": [
                     "text/plain"
@@ -296,11 +265,6 @@ const docTemplate = `{
         },
         "/update": {
             "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "Updates user email or password by username",
                 "consumes": [
                     "application/json"
@@ -397,13 +361,6 @@ const docTemplate = `{
                     "maxLength": 20
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }`

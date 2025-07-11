@@ -175,7 +175,6 @@ func CheckToken(ctx *azugo.Context) bool {
 // @Success     200       {string}  string  "Login successful"
 // @Failure     400       {string}  string  "Missing credentials or wrong password"
 // @Failure     404       {string}  string  "User not found"
-// @Security BearerAuth
 // @Router      /login/{id}/{password} [get]
 func LoginByID(ctx *azugo.Context) {
 
@@ -244,7 +243,6 @@ func LoginByID(ctx *azugo.Context) {
 // @Param       username  path      string  true  "The user's unique username"
 // @Success     200       {string}  string  "Username returned in JSON"
 // @Failure     404       {string}  string  "User not found"
-// @Security BearerAuth
 // @Router /find/{username} [post]
 func GetUser(ctx *azugo.Context) {
 	errorToken := CheckToken(ctx)
@@ -289,7 +287,6 @@ func GetUser(ctx *azugo.Context) {
 // @Param user body models.User true "Username and Password"
 // @Success 200 {string} string "All good"
 // @Failure 400 {string} string "Invalid JSON, wrong password or username"
-// @Security BearerAuth
 // @Router /check [post]
 func CheckUsersExistence(ctx *azugo.Context) {
 	errorToken := CheckToken(ctx)
@@ -352,7 +349,6 @@ func CheckUsersExistence(ctx *azugo.Context) {
 // @Produce json
 // @Success 200 {object} models.PublicUserS
 // @Failure 500 {string} string "Internal server error"
-// @Security BearerAuth
 // @Router /list [get]
 func GetAllUsers(ctx *azugo.Context) {
 	errorToken := CheckToken(ctx)
@@ -395,7 +391,6 @@ func GetAllUsers(ctx *azugo.Context) {
 // @Success 200 {object} models.PublicUserS
 // @Failure 400 {string} string "Invalid JSON or validation failed"
 // @Failure 409 {string} string "User with same username or email already exists"
-// @Security BearerAuth
 // @Router /add [post]
 func AddUserToTheList(ctx *azugo.Context) {
 	errorToken := CheckToken(ctx)
@@ -474,7 +469,6 @@ func AddUserToTheList(ctx *azugo.Context) {
 // @Success 200 {object} models.PublicUser
 // @Failure 400 {string} string "Validation failed or nothing to update"
 // @Failure 404 {string} string "User not found"
-// @Security BearerAuth
 // @Router /update [put]
 func PatchUser(ctx *azugo.Context) {
 	errorToken := CheckToken(ctx)
@@ -564,7 +558,6 @@ func PatchUser(ctx *azugo.Context) {
 // @Success 200 {string} string "User deleted"
 // @Failure 400 {string} string "Validation failed or bad request"
 // @Failure 404 {string} string "User not found"
-// @Security BearerAuth
 // @Router /delete [delete]
 func DeleteUser(ctx *azugo.Context) {
 	errorToken := CheckToken(ctx)
