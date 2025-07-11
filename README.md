@@ -21,4 +21,4 @@ docker compose up -d
 
 ## General info 
 
-Keycloak will be available at localhost:8081 with admin, admin credentials for password and username respectively.
+Keycloak will be available at http://localhost:8081, with both the username and password set to admin.
