@@ -19,6 +19,12 @@ var(
 				Password: "654321",
 				Email:    "anna@example.com",
 			},
+			{
+				Username: "Ivars",
+				Password: "123490",
+				Email:    "ivars@example.com",
+			},
+
 		},
 	}
 

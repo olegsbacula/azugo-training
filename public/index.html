@@ -1,1 +1,64 @@
-<html><body><a href="/login">Log in</a></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Welcome</title>
+  <style>
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6b73ff 0%, #000dff 100%);
+      color: #fff;
+    }
+    
+    h1 {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-weight: bold;
+      font-size: 1.875rem; /* 30px */
+      color: #ffffff;
+    }
+
+    .login-btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      font-size: 3rem;
+      font-weight: bold;
+      color: #000dff;
+      background: #fff;
+      border: none;
+      border-radius: 15px;
+      text-decoration: none;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .login-btn:hover {
+      background: #e0e0e0;
+      transform: translateY(-2px);
+    }
+
+    .login-btn:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h1>Welcome to Azugo Training API!</h1>
+    <a href="/login" class="login-btn">Log in</a>
+  </div>
+</body>
+</html>
