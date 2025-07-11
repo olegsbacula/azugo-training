@@ -3,7 +3,6 @@ import(
 	"example.com/project/models"
 	"go.uber.org/zap"
 	"github.com/coreos/go-oidc"
-	"golang.org/x/oauth2"
 )
 
 var(	
