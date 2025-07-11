@@ -30,8 +30,6 @@ var(
 
 	Logger   *zap.Logger
 
-	oauth2Config *oauth2.Config
-
     Verifier *oidc.IDTokenVerifier
 
     NonceStore = map[string]bool{}
