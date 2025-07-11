@@ -28,7 +28,3 @@ type PublicUserS struct {
 func (u *User) Validate(validate *validation.Validate) error {
     return validate.Struct(u)
 }
-
-type Tokens struct {
-    Token []string
-}

@@ -3,7 +3,6 @@ package routes
 import (
 	"context"
 	"crypto/rand"
-	"strings"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -24,9 +23,9 @@ import (
 )
 
 var (
-	TokenToCheck  models.Tokens
 	oauth2Config *oauth2.Config
 	verifier     *oidc.IDTokenVerifier
+	tokenList []string
 )
 
 func InitOAuth(ctx context.Context, cfg *oauth2.Config, prov *oidc.Provider) {
@@ -117,13 +116,24 @@ func HandleCallback(ctx *azugo.Context) {
 	expiry := time.Until(token.Expiry)
 	setCookie(ctx, "access_token", token.AccessToken, int(expiry.Seconds()))
 	ctx.Header.Add("Authorization", "Bearer " + token.AccessToken)
+	tokenList = append(tokenList, token.AccessToken)
 	var claims struct {
 		Email string `json:"email"`
 	}
+	
 	idToken.Claims(&claims)
-	ctx.Text(fmt.Sprintf("Hey, %s! Your token is delivered to you", claims.Email))
-	TokenToCheck.append()
-}	
+
+	swaggerLink := "/swagger"
+	ctx.ContentType("text/html; charset=utf-8")
+	ctx.Context().WriteString(fmt.Sprintf(
+    `Hey, %s! Your token is delivered to you. 
+    <a href="%s">Go to Swagger UI</a>`,
+    claims.Email,
+    swaggerLink,
+	))
+
+	 
+	}
 
 func setCookie(ctx *azugo.Context, name, val string, maxAge int) {
 	c := fasthttp.AcquireCookie()
@@ -136,36 +146,20 @@ func setCookie(ctx *azugo.Context, name, val string, maxAge int) {
 }
 
 func CheckToken(ctx *azugo.Context) bool {
-    authHeader := string(ctx.Context().Request.Header.Peek("Authorization"))
-    var rawToken string
-    if authHeader != "" {
-        rawToken = strings.TrimPrefix(authHeader, "Bearer ")
-    } else {
-        rawToken = string(ctx.Context().Request.Header.Cookie("access_token"))
-    }
+    authToken := string(ctx.Context().Request.Header.Cookie("access_token"))
 
-    if rawToken == "" {
+    if authToken == "" {
         ctx.StatusCode(fasthttp.StatusUnauthorized)
         ctx.Text("Missing token")
         return false
     }
-
-	token := &oauth2.Token{
-        AccessToken: rawToken,
+	
+	for _, t := range tokenList {
+        if t == authToken {
+            return true
+        }
     }
 
-    token, err := oauth2Config.AccessToken(ctx.Context(), rawToken)
-    if err != nil {
-        ctx.StatusCode(fasthttp.StatusUnauthorized)
-        ctx.Text("Invalid token")
-        return false
-    }
-
-    if time.Now().After(token.Expiry) {
-        ctx.StatusCode(fasthttp.StatusUnauthorized)
-        ctx.Text("Token has expired")
-        return false
-    }
 
     return true
 }
